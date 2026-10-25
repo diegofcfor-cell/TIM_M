@@ -9,6 +9,7 @@ import 'package:trivia_live/models/juego.dart';
 import 'package:trivia_live/models/tema.dart';
 import 'package:trivia_live/screens/configurar_sala_screen.dart';
 import 'package:trivia_live/screens/unirse_screen.dart';
+import 'package:trivia_live/services/efectos.dart';
 
 import 'ayudantes.dart';
 
@@ -60,19 +61,16 @@ final rankingFinal = PuestoRanking.listaDesdeJson([
 Future<void> entrarComoAnfitrion(
   WidgetTester tester,
   ReverbFalso reverb,
-  List<String> pedidos,
-) async {
+  List<String> pedidos, {
+  List<Map<String, dynamic>> jugadores = const [ana],
+}) async {
   final laravel = MockClient((pedido) async {
     pedidos.add('${pedido.method} ${pedido.url.path}');
     if (pedido.url.path == '/api/rooms') {
-      return json({
-        'data': salaJson(jugadores: [ana]),
-      }, 201);
+      return json({'data': salaJson(jugadores: jugadores)}, 201);
     }
     if (pedido.method == 'GET') {
-      return json({
-        'data': salaJson(jugadores: [ana]),
-      }, 200);
+      return json({'data': salaJson(jugadores: jugadores)}, 200);
     }
     return json({'started': true}, 200);
   });
@@ -89,8 +87,9 @@ Future<void> entrarComoAnfitrion(
 Future<void> entrarComoJugadora(
   WidgetTester tester,
   ReverbFalso reverb,
-  Future<http.Response> Function(http.Request) alResponder,
-) async {
+  Future<http.Response> Function(http.Request) alResponder, {
+  Efectos? efectos,
+}) async {
   final laravel = MockClient((pedido) async {
     if (pedido.url.path.endsWith('/answer')) return alResponder(pedido);
     if (pedido.url.path.endsWith('/join')) {
@@ -105,7 +104,9 @@ Future<void> entrarComoJugadora(
     }, 200);
   });
 
-  await tester.pumpWidget(app(laravel, const UnirseScreen(), realtime: reverb));
+  await tester.pumpWidget(
+    app(laravel, const UnirseScreen(), realtime: reverb, efectos: efectos),
+  );
   await tester.enterText(find.byType(TextField).at(0), 'KX7P2A');
   await tester.enterText(find.byType(TextField).at(1), 'Ana');
   await tester.tap(find.text('¡Entrar!'));
@@ -245,4 +246,120 @@ void main() {
     expect(find.text('¡Se terminó el tiempo!'), findsOneWidget);
     await tester.pump(const Duration(seconds: 30));
   });
+
+  testWidgets('vibra y suena en los momentos justos', (tester) async {
+    final efectos = EfectosAnotados();
+    final reverb = ReverbFalso();
+    await entrarComoJugadora(
+      tester,
+      reverb,
+      (_) async => json({'received': true}, 201),
+      efectos: efectos,
+    );
+    final sala = reverb.canales['sala.KX7P2A']!;
+    expect(efectos.pedidos, ['pantalla prendida']);
+
+    sala.alMostrarPregunta!(pregunta);
+    await tester.pump();
+    await tester.tap(find.text('6'));
+    await tester.pump(const Duration(seconds: 30));
+    expect(efectos.pedidos.where((p) => p == 'tic'), hasLength(5));
+
+    sala.alCerrarPregunta!(resultado());
+    sala.alTerminarPartida!(rankingFinal);
+    await tester.pump();
+
+    expect(efectos.pedidos, [
+      'pantalla prendida',
+      'toque',
+      'tic',
+      'tic',
+      'tic',
+      'tic',
+      'tic',
+      'acerto',
+      'fin',
+      'pantalla libre',
+    ]);
+  });
+
+  testWidgets('el botón del parlante silencia los sonidos', (tester) async {
+    final efectos = EfectosAnotados();
+    final reverb = ReverbFalso();
+    await entrarComoJugadora(
+      tester,
+      reverb,
+      (_) async => json({'received': true}, 201),
+      efectos: efectos,
+    );
+    reverb.canales['sala.KX7P2A']!.alMostrarPregunta!(pregunta);
+    await tester.pump();
+
+    await tester.tap(find.byTooltip('Silenciar'));
+    await tester.pump();
+    expect(efectos.silencio.value, isTrue);
+    expect(find.byTooltip('Activar sonidos'), findsOneWidget);
+    await tester.pump(const Duration(seconds: 30));
+  });
+
+  // Celular chico, celular común y tablet acostada.
+  for (final (nombre, tamano) in [
+    ('celular chico', const Size(360, 640)),
+    ('celular', const Size(412, 915)),
+    ('celular acostado', const Size(800, 360)),
+    ('tablet', const Size(1280, 800)),
+    ('tablet parada', const Size(800, 1280)),
+  ]) {
+    testWidgets('en $nombre todas las pantallas del juego entran bien', (
+      tester,
+    ) async {
+      tester.view.physicalSize = tamano;
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
+
+      // Una sala llena: 8 jugadores con apodos largos.
+      final jugadores = [
+        for (var i = 1; i <= 8; i++)
+          {'id': i, 'nickname': 'Jugador número $i', 'score': 0},
+      ];
+      final reverb = ReverbFalso();
+      await entrarComoAnfitrion(tester, reverb, [], jugadores: jugadores);
+      expect(find.text('¡Empezar partida!'), findsOneWidget);
+      final sala = reverb.canales['sala.KX7P2A']!;
+
+      sala.alMostrarPregunta!(pregunta);
+      await tester.pump();
+      expect(find.text(pregunta.texto), findsOneWidget);
+
+      final ranking = [
+        for (final j in jugadores)
+          {
+            'position': j['id'],
+            'id': j['id'],
+            'nickname': j['nickname'],
+            'score': 1000 - (j['id'] as int) * 100,
+            'points': 900,
+          },
+      ];
+      sala.alCerrarPregunta!(
+        ResultadoPregunta.fromJson({
+          'position': 1,
+          'correct_option_id': 12,
+          'answered': 8,
+          'correct': 5,
+          'players': 8,
+          'is_last': true,
+          'ranking': ranking,
+        }),
+      );
+      await tester.pump();
+      expect(find.text('Ver el final'), findsOneWidget);
+
+      sala.alTerminarPartida!(PuestoRanking.listaDesdeJson(ranking));
+      await tester.pump();
+      expect(find.text('¡Fin de la partida!'), findsOneWidget);
+      // Si algo no entrara en la pantalla, Flutter daría un error de
+      // "overflow" y el test fallaría solo.
+    });
+  }
 }

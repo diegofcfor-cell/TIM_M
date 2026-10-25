@@ -7,6 +7,7 @@ import '../models/juego.dart';
 import '../models/sala.dart';
 import '../services/almacenamiento.dart';
 import '../services/api_service.dart';
+import '../services/efectos.dart';
 import '../services/realtime_service.dart';
 
 /// En qué momento de la partida estamos. Cada fase es una pantalla.
@@ -18,11 +19,15 @@ class SalaActual extends ChangeNotifier {
     required this.api,
     required this.almacenamiento,
     required this.realtime,
-  });
+    Efectos? efectos,
+  }) : efectos = efectos ?? Efectos();
 
   final ApiService api;
   final Almacenamiento almacenamiento;
   final RealtimeService realtime;
+
+  /// Vibraciones, sonidos y pantalla prendida.
+  final Efectos efectos;
 
   Sala? sala;
   bool soyAnfitrion = false;
@@ -132,6 +137,7 @@ class SalaActual extends ChangeNotifier {
     if (fase != FaseJuego.pregunta || segundosRestantes == 0) return;
     miRespuestaId = opcionId;
     error = null;
+    efectos.toque();
     notifyListeners();
     try {
       await api.responder(sala!.codigo, token, opcionId);
@@ -181,6 +187,8 @@ class SalaActual extends ChangeNotifier {
     _reloj = Timer.periodic(const Duration(seconds: 1), (reloj) {
       segundosRestantes = segundosRestantes > 0 ? segundosRestantes - 1 : 0;
       if (segundosRestantes == 0) reloj.cancel();
+      // Tic-tac en los últimos 5 segundos, para meter un poco de presión.
+      if (segundosRestantes > 0 && segundosRestantes <= 5) efectos.tic();
       notifyListeners();
     });
     notifyListeners();
@@ -194,6 +202,11 @@ class SalaActual extends ChangeNotifier {
     jugadoresEnPartida = nuevo.jugadores;
     ranking = nuevo.ranking;
     segundosRestantes = 0;
+    if (!soyAnfitrion && miRespuestaId == nuevo.opcionCorrectaId) {
+      efectos.acerto();
+    } else if (!soyAnfitrion) {
+      efectos.fallo();
+    }
     notifyListeners();
   }
 
@@ -202,6 +215,8 @@ class SalaActual extends ChangeNotifier {
   Future<void> _escucharSala() async {
     final codigo = sala!.codigo;
     _dejarDeEscuchar?.call();
+    // Mientras estemos en una sala, el celular no se bloquea solo.
+    efectos.pantallaPrendida(true);
     // Cada evento que emite Laravel cambia lo que se ve en pantalla.
     bool esEstaSala() => sala?.codigo == codigo;
     _dejarDeEscuchar = realtime.escucharSala(
@@ -229,6 +244,8 @@ class SalaActual extends ChangeNotifier {
           _reloj?.cancel();
           ranking = rankingFinal;
           fase = FaseJuego.terminada;
+          efectos.fin();
+          efectos.pantallaPrendida(false);
           notifyListeners();
         },
       ),
@@ -251,6 +268,7 @@ class SalaActual extends ChangeNotifier {
 
   @override
   void dispose() {
+    efectos.pantallaPrendida(false);
     _reloj?.cancel();
     _dejarDeEscuchar?.call();
     _estados?.cancel();

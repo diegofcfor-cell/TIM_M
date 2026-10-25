@@ -34,50 +34,62 @@ class InicioScreen extends StatelessWidget {
             ),
         ],
       ),
+      // Se puede deslizar por si el celular está acostado.
       body: Center(
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 480),
-          child: Padding(
-            padding: const EdgeInsets.all(24),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                const Icon(Icons.quiz, size: 96),
-                const SizedBox(height: 16),
-                Text(
-                  '¡Preguntas en vivo!',
-                  textAlign: TextAlign.center,
-                  style: Theme.of(context).textTheme.headlineMedium,
-                ),
-                const SizedBox(height: 48),
-                _BotonGrande(
-                  icono: Icons.add_circle,
-                  texto: 'Crear una sala',
-                  onPressed: () => Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (_) => sesion.iniciada
-                          ? const TemasScreen()
-                          : const LoginScreen(),
+        child: SingleChildScrollView(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 480),
+            child: Padding(
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Center(
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(28),
+                      child: Image.asset(
+                        'assets/imagenes/icono.png',
+                        width: 128,
+                        height: 128,
+                      ),
                     ),
                   ),
-                ),
-                const SizedBox(height: 16),
-                _BotonGrande(
-                  icono: Icons.login,
-                  texto: 'Unirme a una sala',
-                  onPressed: () => Navigator.of(context).push(
-                    MaterialPageRoute(builder: (_) => const UnirseScreen()),
-                  ),
-                ),
-                if (sesion.iniciada) ...[
-                  const SizedBox(height: 24),
+                  const SizedBox(height: 16),
                   Text(
-                    'Anfitrión: ${sesion.nombre}',
+                    '¡Preguntas en vivo!',
                     textAlign: TextAlign.center,
+                    style: Theme.of(context).textTheme.headlineMedium,
                   ),
+                  const SizedBox(height: 48),
+                  _BotonGrande(
+                    icono: Icons.add_circle,
+                    texto: 'Crear una sala',
+                    onPressed: () => Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) => sesion.iniciada
+                            ? const TemasScreen()
+                            : const LoginScreen(),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  _BotonGrande(
+                    icono: Icons.login,
+                    texto: 'Unirme a una sala',
+                    onPressed: () => Navigator.of(context).push(
+                      MaterialPageRoute(builder: (_) => const UnirseScreen()),
+                    ),
+                  ),
+                  if (sesion.iniciada) ...[
+                    const SizedBox(height: 24),
+                    Text(
+                      'Anfitrión: ${sesion.nombre}',
+                      textAlign: TextAlign.center,
+                    ),
+                  ],
                 ],
-              ],
+              ),
             ),
           ),
         ),

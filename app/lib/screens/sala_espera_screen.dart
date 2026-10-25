@@ -38,7 +38,7 @@ class SalaEsperaScreen extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Expanded(child: SingleChildScrollView(child: datosSala)),
-                Expanded(child: lista),
+                Expanded(child: SingleChildScrollView(child: lista)),
               ],
             )
           : ListView(children: [datosSala, lista]),
