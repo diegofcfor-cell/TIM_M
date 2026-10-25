@@ -237,14 +237,16 @@ class _PiePregunta extends StatelessWidget {
         Text(texto, textAlign: TextAlign.center, style: textos.titleMedium),
       );
     } else {
+      final miPuesto = salaActual.miPuesto;
       if (!salaActual.soyAnfitrion) {
         final acerte = salaActual.miRespuestaId == resultado.opcionCorrectaId;
+        final sume = miPuesto?.puntosPregunta ?? 0;
         mensajes.add(
           Text(
             salaActual.miRespuestaId == null
                 ? 'No llegaste a responder'
                 : acerte
-                ? '¡Correcto!'
+                ? '¡Correcto! +$sume puntos'
                 : 'Esta vez no',
             textAlign: TextAlign.center,
             style: textos.headlineSmall,
@@ -258,7 +260,17 @@ class _PiePregunta extends StatelessWidget {
           style: textos.titleMedium,
         ),
       );
+      if (miPuesto != null) {
+        mensajes.add(
+          Text(
+            'Vas ${miPuesto.posicion}° con ${miPuesto.puntos} puntos',
+            textAlign: TextAlign.center,
+          ),
+        );
+      }
       if (salaActual.soyAnfitrion) {
+        // El anfitrión muestra quién va ganando en la pantalla grande.
+        mensajes.add(_TopRanking(ranking: salaActual.ranking));
         mensajes.add(const SizedBox(height: 8));
         mensajes.add(
           FilledButton(
@@ -281,6 +293,43 @@ class _PiePregunta extends StatelessWidget {
   }
 }
 
+/// Los primeros 5, en una lista compacta.
+class _TopRanking extends StatelessWidget {
+  const _TopRanking({required this.ranking});
+
+  final List<PuestoRanking> ranking;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(top: 8),
+      child: Column(
+        children: [
+          for (final puesto in ranking.take(5))
+            Row(
+              children: [
+                SizedBox(width: 32, child: Text('${puesto.posicion}°')),
+                Expanded(
+                  child: Text(puesto.apodo, overflow: TextOverflow.ellipsis),
+                ),
+                if (puesto.puntosPregunta > 0)
+                  Text(
+                    '+${puesto.puntosPregunta}  ',
+                    style: const TextStyle(color: Colors.green),
+                  ),
+                Text(
+                  '${puesto.puntos}',
+                  style: const TextStyle(fontWeight: FontWeight.bold),
+                ),
+              ],
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+/// El final: podio con los 3 primeros y la lista del resto.
 class _Fin extends StatelessWidget {
   const _Fin({required this.salaActual});
 
@@ -288,33 +337,113 @@ class _Fin extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Icon(Icons.emoji_events, size: 96, color: Colors.amber),
-            const SizedBox(height: 16),
-            Text(
-              '¡Fin de la partida!',
-              style: Theme.of(context).textTheme.headlineMedium,
-            ),
-            const SizedBox(height: 8),
-            // Los puntos y el podio llegan en la fase 6.
-            const Text(
-              'Pronto vas a ver acá los puntos y el podio.',
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 24),
-            OutlinedButton(
-              onPressed: () =>
-                  Navigator.of(context).popUntil((ruta) => ruta.isFirst),
-              child: const Text('Volver al inicio'),
-            ),
-          ],
+    final ranking = salaActual.ranking;
+    final miPuesto = salaActual.miPuesto;
+    final textos = Theme.of(context).textTheme;
+
+    return ListView(
+      padding: const EdgeInsets.all(24),
+      children: [
+        const Icon(Icons.emoji_events, size: 72, color: Colors.amber),
+        Text(
+          '¡Fin de la partida!',
+          textAlign: TextAlign.center,
+          style: textos.headlineMedium,
         ),
-      ),
+        if (miPuesto != null) ...[
+          const SizedBox(height: 8),
+          Text(
+            'Terminaste ${miPuesto.posicion}° de ${ranking.length} '
+            'con ${miPuesto.puntos} puntos',
+            textAlign: TextAlign.center,
+            style: textos.titleMedium,
+          ),
+        ],
+        const SizedBox(height: 24),
+        _Podio(ranking: ranking, miJugadorId: salaActual.miJugadorId),
+        for (final puesto in ranking.skip(3))
+          ListTile(
+            leading: Text('${puesto.posicion}°', style: textos.titleMedium),
+            title: Text(puesto.apodo),
+            trailing: Text('${puesto.puntos}'),
+            selected: puesto.jugadorId == salaActual.miJugadorId,
+          ),
+        const SizedBox(height: 24),
+        OutlinedButton(
+          onPressed: () =>
+              Navigator.of(context).popUntil((ruta) => ruta.isFirst),
+          child: const Text('Volver al inicio'),
+        ),
+      ],
+    );
+  }
+}
+
+/// Tres escalones: el 2° a la izquierda, el 1° en el medio (más alto)
+/// y el 3° a la derecha, como en un podio de verdad.
+class _Podio extends StatelessWidget {
+  const _Podio({required this.ranking, required this.miJugadorId});
+
+  final List<PuestoRanking> ranking;
+  final int? miJugadorId;
+
+  static const _alturas = [140.0, 100.0, 70.0];
+  static const _colores = [
+    Color(0xFFFFC107), // oro
+    Color(0xFFB0BEC5), // plata
+    Color(0xFFCD7F32), // bronce
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    // Orden en pantalla: 2°, 1°, 3°.
+    final lugares = [1, 0, 2].where((i) => i < ranking.length);
+
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.end,
+      children: [
+        for (final i in lugares)
+          Expanded(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 4),
+              child: Column(
+                children: [
+                  Text(
+                    ranking[i].apodo,
+                    textAlign: TextAlign.center,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      decoration: ranking[i].jugadorId == miJugadorId
+                          ? TextDecoration.underline
+                          : null,
+                    ),
+                  ),
+                  Text('${ranking[i].puntos} pts'),
+                  const SizedBox(height: 4),
+                  Container(
+                    height: _alturas[i],
+                    alignment: Alignment.center,
+                    decoration: BoxDecoration(
+                      color: _colores[i],
+                      borderRadius: const BorderRadius.vertical(
+                        top: Radius.circular(12),
+                      ),
+                    ),
+                    child: Text(
+                      '${ranking[i].posicion}°',
+                      style: const TextStyle(
+                        fontSize: 32,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+      ],
     );
   }
 }

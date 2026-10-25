@@ -40,6 +40,42 @@ class Pregunta {
   final int segundos;
 }
 
+/// Una fila del ranking: quién va en qué puesto y con cuántos puntos.
+class PuestoRanking {
+  const PuestoRanking({
+    required this.posicion,
+    required this.jugadorId,
+    required this.apodo,
+    required this.puntos,
+    this.puntosPregunta = 0,
+  });
+
+  factory PuestoRanking.fromJson(Map<String, dynamic> json) {
+    return PuestoRanking(
+      posicion: json['position'] as int,
+      jugadorId: json['id'] as int,
+      apodo: json['nickname'] as String,
+      puntos: json['score'] as int,
+      puntosPregunta: json['points'] as int? ?? 0,
+    );
+  }
+
+  /// Si hay empate, dos jugadores comparten el mismo puesto.
+  final int posicion;
+  final int jugadorId;
+  final String apodo;
+
+  /// Puntos totales en la partida.
+  final int puntos;
+
+  /// Puntos que sumó en la última pregunta (el "+850").
+  final int puntosPregunta;
+
+  static List<PuestoRanking> listaDesdeJson(List<dynamic> json) => json
+      .map((p) => PuestoRanking.fromJson(p as Map<String, dynamic>))
+      .toList();
+}
+
 /// Lo que llega con el evento PreguntaCerrada.
 class ResultadoPregunta {
   const ResultadoPregunta({
@@ -49,6 +85,7 @@ class ResultadoPregunta {
     required this.acertaron,
     required this.jugadores,
     required this.esUltima,
+    this.ranking = const [],
   });
 
   factory ResultadoPregunta.fromJson(Map<String, dynamic> json) {
@@ -59,6 +96,9 @@ class ResultadoPregunta {
       acertaron: json['correct'] as int,
       jugadores: json['players'] as int,
       esUltima: json['is_last'] as bool,
+      ranking: PuestoRanking.listaDesdeJson(
+        json['ranking'] as List<dynamic>? ?? const [],
+      ),
     );
   }
 
@@ -68,4 +108,5 @@ class ResultadoPregunta {
   final int acertaron;
   final int jugadores;
   final bool esUltima;
+  final List<PuestoRanking> ranking;
 }

@@ -15,6 +15,7 @@ use App\Models\Player;
 use App\Models\Room;
 use App\Models\RoomQuestion;
 use App\Support\EnVivo;
+use App\Support\Puntos;
 use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Validation\ValidationException;
 
@@ -71,15 +72,24 @@ class GameService
             throw ValidationException::withMessages(['option_id' => 'Esa opción no es de esta pregunta.']);
         }
 
+        $points = Puntos::calcular($option->is_correct, $roomQuestion, now());
+
         try {
             $answer = $player->answers()->create([
                 'room_question_id' => $roomQuestion->id,
                 'option_id' => $option->id,
                 'is_correct' => $option->is_correct,
+                'points' => $points,
                 'answered_at' => now(),
             ]);
         } catch (UniqueConstraintViolationException) {
             throw ValidationException::withMessages(['option_id' => 'Ya respondiste esta pregunta.']);
+        }
+
+        // Se suma en la base, pero los demás recién lo ven en el ranking
+        // cuando se cierra la pregunta (para no revelar quién acertó).
+        if ($points > 0) {
+            $player->increment('score', $points);
         }
 
         EnVivo::emitir(new RespuestaRecibida($roomQuestion));

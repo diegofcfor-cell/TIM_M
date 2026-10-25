@@ -37,7 +37,24 @@ ResultadoPregunta resultado({bool esUltima = false}) =>
       'correct': 1,
       'players': 1,
       'is_last': esUltima,
+      'ranking': [
+        {
+          'position': 1,
+          'id': 3,
+          'nickname': 'Ana',
+          'score': 850,
+          'points': 850,
+        },
+      ],
     });
+
+/// Lo que manda Laravel en PartidaTerminada: Beto y Ana empatan arriba.
+final rankingFinal = PuestoRanking.listaDesdeJson([
+  {'position': 1, 'id': 8, 'nickname': 'Beto', 'score': 1700},
+  {'position': 1, 'id': 3, 'nickname': 'Ana', 'score': 1700},
+  {'position': 3, 'id': 5, 'nickname': 'Caro', 'score': 900},
+  {'position': 4, 'id': 6, 'nickname': 'Dani', 'score': 0},
+]);
 
 /// Lleva al anfitrión hasta la sala de espera con Ana adentro.
 Future<void> entrarComoAnfitrion(
@@ -129,14 +146,19 @@ void main() {
     await tester.pump();
     expect(find.text('1 de 1 acertaron'), findsOneWidget);
     expect(find.byIcon(Icons.check_circle), findsOneWidget);
+    // El ranking para mostrar en la pantalla grande.
+    expect(find.text('Ana'), findsOneWidget);
+    expect(find.text('+850  '), findsOneWidget);
 
     await tester.tap(find.text('Siguiente pregunta'));
     await tester.pump();
     expect(pedidos, contains('POST /api/rooms/KX7P2A/next'));
 
-    sala.alTerminarPartida!();
+    sala.alTerminarPartida!(rankingFinal);
     await tester.pump();
     expect(find.text('¡Fin de la partida!'), findsOneWidget);
+    expect(find.text('1700 pts'), findsNWidgets(2));
+    expect(find.text('Dani'), findsOneWidget);
   });
 
   testWidgets('la jugadora responde con su token y ve si acertó', (
@@ -169,7 +191,15 @@ void main() {
 
     sala.alCerrarPregunta!(resultado());
     await tester.pump();
-    expect(find.text('¡Correcto!'), findsOneWidget);
+    expect(find.text('¡Correcto! +850 puntos'), findsOneWidget);
+    expect(find.text('Vas 1° con 850 puntos'), findsOneWidget);
+
+    // Al final, Ana ve el podio y en qué puesto quedó.
+    sala.alTerminarPartida!(rankingFinal);
+    await tester.pump();
+    expect(find.text('Terminaste 1° de 4 con 1700 puntos'), findsOneWidget);
+    expect(find.text('Caro'), findsOneWidget);
+    expect(find.text('900 pts'), findsOneWidget);
   });
 
   testWidgets('cuando se acaba el tiempo ya no se puede responder', (

@@ -23,7 +23,7 @@ class EventosSala {
   final void Function(Pregunta pregunta)? alMostrarPregunta;
   final void Function(int respondieron, int jugadores)? alRecibirRespuesta;
   final void Function(ResultadoPregunta resultado)? alCerrarPregunta;
-  final void Function()? alTerminarPartida;
+  final void Function(List<PuestoRanking> ranking)? alTerminarPartida;
 }
 
 /// Mantiene abierta la conexión WebSocket con Reverb y escucha canales.
@@ -78,7 +78,11 @@ class RealtimeService {
         .listen('PreguntaCerrada', (datos) {
           eventos.alCerrarPregunta?.call(ResultadoPregunta.fromJson(datos));
         })
-        .listen('PartidaTerminada', (_) => eventos.alTerminarPartida?.call())
+        .listen('PartidaTerminada', (datos) {
+          eventos.alTerminarPartida?.call(
+            PuestoRanking.listaDesdeJson(datos['ranking'] as List<dynamic>),
+          );
+        })
         .cancel;
   }
 
