@@ -1,9 +1,13 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <!-- Necesario para hablar con Laravel y Reverb en la versión final (.apk). -->
     <uses-permission android:name="android.permission.INTERNET"/>
+    <!-- usesCleartextTraffic: permite hablar por http:// y ws:// (sin la "s"
+         de seguro) con Laravel y Reverb en tu compu. Si algún día se publica
+         con https://, se puede sacar. -->
     <application
         android:label="TriviaLive"
         android:name="${applicationName}"
+        android:usesCleartextTraffic="true"
         android:icon="@mipmap/ic_launcher">
         <activity
             android:name=".MainActivity"

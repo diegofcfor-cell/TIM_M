@@ -16,11 +16,32 @@ class PruebaConexionScreen extends StatefulWidget {
 
 class _PruebaConexionScreenState extends State<PruebaConexionScreen> {
   final _mensaje = TextEditingController(text: '¡Hola a todos!');
+  final _servidor = TextEditingController(text: Config.host);
+  String? _errorServidor;
 
   @override
   void dispose() {
     _mensaje.dispose();
+    _servidor.dispose();
     super.dispose();
+  }
+
+  Future<void> _guardarServidor() async {
+    final texto = _servidor.text.trim();
+    if (!Config.hostValido(texto)) {
+      setState(
+        () => _errorServidor = 'Escribí solo la IP, por ejemplo 192.168.1.20',
+      );
+      return;
+    }
+    setState(() => _errorServidor = null);
+    await Config.guardarHost(texto);
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Guardado. Cerrá la app y volvé a abrirla para usarlo.'),
+      ),
+    );
   }
 
   @override
@@ -32,8 +53,37 @@ class _PruebaConexionScreenState extends State<PruebaConexionScreen> {
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          Text('Servidor: ${Config.host}', textAlign: TextAlign.center),
-          const SizedBox(height: 16),
+          // Así el mismo .apk sirve en cualquier red Wi-Fi: cada uno escribe
+          // la IP de la compu donde corre Laravel.
+          Card(
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Text(
+                    'Servidor',
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
+                  const SizedBox(height: 8),
+                  TextField(
+                    controller: _servidor,
+                    keyboardType: TextInputType.url,
+                    decoration: InputDecoration(
+                      labelText: 'IP de la compu con Laravel',
+                      helperText: 'Ahora: ${Config.host}',
+                      errorText: _errorServidor,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  OutlinedButton(
+                    onPressed: _guardarServidor,
+                    child: const Text('Guardar servidor'),
+                  ),
+                ],
+              ),
+            ),
+          ),
           Card(
             child: Padding(
               padding: const EdgeInsets.all(16),

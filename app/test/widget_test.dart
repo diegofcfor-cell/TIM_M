@@ -5,6 +5,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:trivia_live/config.dart';
 import 'package:trivia_live/screens/prueba_conexion_screen.dart';
 import 'package:trivia_live/services/api_service.dart';
 import 'package:trivia_live/services/realtime_service.dart';
@@ -41,5 +43,39 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.textContaining('¡Hola desde Laravel 12!'), findsOneWidget);
+  });
+
+  testWidgets('se puede cambiar la IP del servidor desde la app', (
+    tester,
+  ) async {
+    SharedPreferences.setMockInitialValues({});
+    await tester.pumpWidget(
+      ChangeNotifierProvider(
+        create: (_) => PruebaConexion(
+          api: ApiService(client: MockClient((_) async => fail('sin API'))),
+          realtime: RealtimeService(),
+        ),
+        child: const MaterialApp(home: PruebaConexionScreen()),
+      ),
+    );
+    final campo = find.widgetWithText(TextField, 'IP de la compu con Laravel');
+
+    await tester.enterText(campo, 'http://192.168.1.20:8000');
+    await tester.tap(find.text('Guardar servidor'));
+    await tester.pump();
+    expect(
+      find.text('Escribí solo la IP, por ejemplo 192.168.1.20'),
+      findsOneWidget,
+    );
+
+    await tester.enterText(campo, ' 192.168.1.20 ');
+    await tester.tap(find.text('Guardar servidor'));
+    await tester.pump();
+    expect(find.textContaining('Guardado.'), findsOneWidget);
+
+    // La próxima vez que arranque, la app usa esa IP.
+    await Config.cargar();
+    expect(Config.host, '192.168.1.20');
+    Config.host = Config.hostPorDefecto;
   });
 }
