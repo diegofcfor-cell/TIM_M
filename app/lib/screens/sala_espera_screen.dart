@@ -7,8 +7,8 @@ import '../state/sala_actual.dart';
 
 /// Sala de espera. El anfitrión ve el código y el QR; todos ven quién entró.
 ///
-/// En la fase 3 la lista se actualiza con un botón, a propósito: así se ve
-/// el problema que resuelve el tiempo real en la fase 4.
+/// La lista de jugadores se actualiza sola: cuando alguien entra, Laravel
+/// emite JugadorSeUnio y Reverb nos lo entrega por WebSocket.
 class SalaEsperaScreen extends StatelessWidget {
   const SalaEsperaScreen({super.key});
 
@@ -142,15 +142,48 @@ class _ListaJugadores extends StatelessWidget {
                   : null,
             ),
           const SizedBox(height: 8),
-          OutlinedButton.icon(
-            icon: const Icon(Icons.refresh),
-            label: Text(
-              salaActual.actualizando ? 'Actualizando...' : 'Actualizar lista',
+          _EstadoEnVivo(enVivo: salaActual.enVivo),
+          // Si se corta Reverb, se puede seguir actualizando a mano.
+          if (!salaActual.enVivo)
+            OutlinedButton.icon(
+              icon: const Icon(Icons.refresh),
+              label: Text(
+                salaActual.actualizando
+                    ? 'Actualizando...'
+                    : 'Actualizar lista',
+              ),
+              onPressed: salaActual.actualizando ? null : salaActual.actualizar,
             ),
-            onPressed: salaActual.actualizando ? null : salaActual.actualizar,
-          ),
         ],
       ),
+    );
+  }
+}
+
+class _EstadoEnVivo extends StatelessWidget {
+  const _EstadoEnVivo({required this.enVivo});
+
+  final bool enVivo;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Icon(
+          Icons.circle,
+          size: 12,
+          color: enVivo ? Colors.green : Colors.grey,
+        ),
+        const SizedBox(width: 8),
+        Flexible(
+          child: Text(
+            enVivo
+                ? 'En vivo: los jugadores aparecen solos'
+                : 'Sin conexión en vivo',
+          ),
+        ),
+      ],
     );
   }
 }

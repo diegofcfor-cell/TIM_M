@@ -19,14 +19,14 @@ class PruebaConexion extends ChangeNotifier {
   final List<String> mensajesRecibidos = [];
 
   StreamSubscription<ReverbState>? _estados;
-  Subscription? _canal;
+  Cancelar? _cancelarCanal;
 
   Future<void> iniciar() async {
     _estados = realtime.estados.listen((estado) {
       estadoWebSocket = estado;
       notifyListeners();
     });
-    _canal = realtime.escucharPruebas((datos) {
+    _cancelarCanal = realtime.escucharPruebas((datos) {
       mensajesRecibidos.insert(0, '${datos['mensaje']} (${datos['hora']})');
       notifyListeners();
     });
@@ -60,9 +60,8 @@ class PruebaConexion extends ChangeNotifier {
 
   @override
   void dispose() {
-    _canal?.cancel();
+    _cancelarCanal?.call();
     _estados?.cancel();
-    realtime.dispose();
     super.dispose();
   }
 }
