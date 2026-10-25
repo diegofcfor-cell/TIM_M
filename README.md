@@ -13,13 +13,17 @@ El anfitrión crea una sala y elige el tema (matemáticas, ciencias naturales, c
 
 La idea clave: **la app le habla a Laravel por HTTP** (pide datos, manda respuestas) y **Laravel le avisa a todas las apps por WebSocket** a través de Reverb.
 
-## Estado actual: fase 4 (primer evento en tiempo real)
+## Estado actual: fase 5 (el juego con preguntas y reloj)
 
-- **Evento `JugadorSeUnio`:** cuando un jugador entra, Laravel lo emite en el canal `sala.{codigo}` y Reverb se lo entrega a todas las apps de esa sala.
-- **App:** la sala de espera escucha ese canal y agrega al jugador **sin tocar nada**. Muestra "En vivo" cuando está conectada a Reverb. Si Reverb se corta, aparece el botón "Actualizar lista" como plan B.
-- Fases anteriores: login del anfitrión, crear sala con código y QR, unirse con apodo, 120 preguntas en 6 temas y la prueba de conexión (ícono de arriba a la derecha).
+- **El anfitrión toca "¡Empezar partida!"** y Laravel manda la primera pregunta a todos por Reverb (evento `PreguntaMostrada`). La pregunta llega **sin la respuesta correcta**: así nadie puede hacer trampa mirando los datos.
+- **Cuatro botones de colores** (rojo, azul, amarillo y verde, cada uno con su figura) y una **cuenta regresiva** de 30 o 60 segundos.
+- **El reloj que manda es el de Laravel.** La cuenta de la app es solo visual: si una respuesta llega tarde, Laravel la rechaza con "¡Se terminó el tiempo!".
+- **El anfitrión ve en vivo cuántos respondieron** (evento `RespuestaRecibida`). Si responden todos, la pregunta se cierra antes.
+- **Al cerrarse la pregunta** (evento `PreguntaCerrada`) se marca la opción correcta y se ve cuántos acertaron. Si nadie termina, la cierra un *job* de la cola cuando se acaba el tiempo.
+- El anfitrión pasa a la siguiente pregunta y, al final, todos ven "¡Fin de la partida!" (evento `PartidaTerminada`). Los puntos y el podio llegan en la fase 6.
+- Fases anteriores: sala de espera en vivo, login del anfitrión, crear sala con código y QR, unirse con apodo, 120 preguntas en 6 temas y la prueba de conexión.
 
-Para ver el tiempo real tienen que estar corriendo **las dos terminales**: `php artisan serve` y `php artisan reverb:start`.
+Para jugar tienen que estar corriendo **las tres terminales**: `php artisan serve`, `php artisan reverb:start` y `php artisan queue:work`.
 
 ## Requisitos
 
@@ -41,7 +45,7 @@ php artisan migrate --seed
 
 `--seed` carga los temas, las preguntas y un anfitrión de prueba (`anfitrion@trivia.test`, contraseña `password`).
 
-Después abrí **dos terminales** dentro de `backend/`:
+Después abrí **tres terminales** dentro de `backend/`:
 
 ```bash
 # Terminal 1: la API por HTTP
@@ -49,6 +53,9 @@ php artisan serve --host=0.0.0.0 --port=8000
 
 # Terminal 2: el servidor de WebSockets
 php artisan reverb:start --host=0.0.0.0 --port=8080
+
+# Terminal 3: la cola, que cierra cada pregunta cuando se acaba el tiempo
+php artisan queue:work
 ```
 
 `--host=0.0.0.0` hace que tu computadora acepte conexiones de otros dispositivos de la red Wi-Fi, como tu celular.
@@ -79,4 +86,5 @@ cd app && flutter test
 
 - **"No se pudo conectar" en la API**: revisá que `php artisan serve` esté corriendo con `--host=0.0.0.0` y que el celular esté en la misma red Wi-Fi.
 - **El punto de Reverb queda en rojo**: revisá que `php artisan reverb:start` esté corriendo y que `REVERB_APP_KEY` en `backend/.env` sea igual a la de `app/lib/config.dart` (`trivia-live-key`).
+- **La pregunta no se cierra sola al terminar el tiempo**: falta la terminal 3, `php artisan queue:work`.
 - **Firewall de Windows**: la primera vez puede pedir permiso para PHP. Aceptá en "redes privadas".

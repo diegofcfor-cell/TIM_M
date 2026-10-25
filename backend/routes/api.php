@@ -2,6 +2,7 @@
 
 use App\Events\PingEnviado;
 use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\GameController;
 use App\Http\Controllers\Api\PlayerController;
 use App\Http\Controllers\Api\RoomController;
 use App\Http\Controllers\Api\TopicController;
@@ -46,3 +47,10 @@ Route::post('/logout', [AuthController::class, 'logout'])->middleware('auth:sanc
 Route::post('/rooms', [RoomController::class, 'store'])->middleware('auth:sanctum');
 Route::get('/rooms/{room}', [RoomController::class, 'show']);
 Route::post('/rooms/{room}/join', [PlayerController::class, 'store']);
+
+// Fase 5: el juego. Empezar y avanzar es del anfitrión; responder, del jugador.
+Route::middleware('auth:sanctum')->group(function () {
+    Route::post('/rooms/{room}/start', [GameController::class, 'start']);
+    Route::post('/rooms/{room}/next', [GameController::class, 'next']);
+});
+Route::post('/rooms/{room}/answer', [GameController::class, 'answer']);

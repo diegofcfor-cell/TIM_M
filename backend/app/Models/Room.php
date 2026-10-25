@@ -65,6 +65,14 @@ class Room extends Model
         return $this->where($field ?? 'code', Str::upper($value))->firstOrFail();
     }
 
+    /**
+     * La pregunta que se está jugando ahora (o la última que se jugó).
+     */
+    public function currentRoomQuestion(): ?RoomQuestion
+    {
+        return $this->roomQuestions()->where('position', $this->current_index)->first();
+    }
+
     public function host(): BelongsTo
     {
         return $this->belongsTo(User::class, 'host_id');
