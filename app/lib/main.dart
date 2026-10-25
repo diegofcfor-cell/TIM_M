@@ -1,17 +1,24 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import 'screens/prueba_conexion_screen.dart';
+import 'screens/temas_screen.dart';
 import 'services/api_service.dart';
 import 'services/realtime_service.dart';
 import 'state/prueba_conexion.dart';
+import 'state/temas.dart';
 
 void main() {
+  final api = ApiService();
+
   runApp(
-    ChangeNotifierProvider(
-      create: (_) =>
-          PruebaConexion(api: ApiService(), realtime: RealtimeService())
-            ..iniciar(),
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => Temas(api: api)..cargar()),
+        ChangeNotifierProvider(
+          create: (_) =>
+              PruebaConexion(api: api, realtime: RealtimeService())..iniciar(),
+        ),
+      ],
       child: const TriviaLiveApp(),
     ),
   );
@@ -27,7 +34,7 @@ class TriviaLiveApp extends StatelessWidget {
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
       ),
-      home: const PruebaConexionScreen(),
+      home: const TemasScreen(),
     );
   }
 }

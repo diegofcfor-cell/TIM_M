@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 import '../config.dart';
+import '../models/tema.dart';
 
 /// Habla con Laravel por HTTP: la app pide y Laravel responde con JSON.
 class ApiService {
@@ -29,6 +30,18 @@ class ApiService {
       body: jsonEncode({'mensaje': mensaje}),
     );
     return _leer(respuesta);
+  }
+
+  /// Los temas que el anfitrión puede elegir para su sala.
+  Future<List<Tema>> temas() async {
+    final respuesta = await _client.get(
+      Uri.parse('${Config.apiBaseUrl}/topics'),
+      headers: {'Accept': 'application/json'},
+    );
+    final lista = _leer(respuesta)['data'] as List<dynamic>;
+    return lista
+        .map((json) => Tema.fromJson(json as Map<String, dynamic>))
+        .toList();
   }
 
   Map<String, dynamic> _leer(http.Response respuesta) {
