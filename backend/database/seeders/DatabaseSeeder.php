@@ -15,11 +15,12 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        // User::factory(10)->create();
+        // Un anfitrión de prueba para crear salas (contraseña: password).
+        User::firstOrCreate(
+            ['email' => 'anfitrion@trivia.test'],
+            ['name' => 'Anfitrión de prueba', 'password' => 'password'],
+        );
 
-        User::factory()->create([
-            'name' => 'Test User',
-            'email' => 'test@example.com',
-        ]);
+        $this->call(QuestionBankSeeder::class);
     }
 }

@@ -13,12 +13,12 @@ El anfitrión crea una sala y elige el tema (matemáticas, ciencias naturales, c
 
 La idea clave: **la app le habla a Laravel por HTTP** (pide datos, manda respuestas) y **Laravel le avisa a todas las apps por WebSocket** a través de Reverb.
 
-## Estado actual: fase 1 (entorno listo)
+## Estado actual: fase 2 (base de datos y preguntas)
 
-La app tiene una pantalla de prueba con dos botones:
-
-1. **Probar la API**: la app pide `GET /api/ping` y muestra la respuesta de Laravel.
-2. **Enviar a todos**: la app pide `POST /api/ping/broadcast`, Laravel emite el evento `PingEnviado` en el canal `pruebas` y Reverb se lo entrega a todas las apps abiertas. Si abrís la app en dos celulares, el mensaje aparece en los dos.
+- **Base de datos:** 8 tablas (`users`, `topics`, `questions`, `options`, `rooms`, `room_questions`, `players`, `answers`) con sus modelos y relaciones.
+- **Banco de preguntas:** 6 temas con 20 preguntas cada uno, en `backend/database/data/preguntas.php`. Para agregar preguntas, editá ese archivo y corré `php artisan db:seed`.
+- **API:** `GET /api/topics` devuelve los temas con su cantidad de preguntas.
+- **App:** la pantalla principal muestra los temas en tarjetas de colores. El botón de arriba a la derecha abre la prueba de conexión de la fase 1.
 
 ## Requisitos
 
@@ -35,8 +35,10 @@ cd backend
 composer install
 cp .env.example .env
 php artisan key:generate
-php artisan migrate
+php artisan migrate --seed
 ```
+
+`--seed` carga los temas, las preguntas y un anfitrión de prueba (`anfitrion@trivia.test`, contraseña `password`).
 
 Después abrí **dos terminales** dentro de `backend/`:
 

@@ -1,6 +1,7 @@
 <?php
 
 use App\Events\PingEnviado;
+use App\Http\Controllers\Api\TopicController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -29,3 +30,6 @@ Route::post('/ping/broadcast', function (Request $request) {
 
     return response()->json(['enviado' => true, 'hora' => $hora], 202);
 });
+
+// Fase 2: los temas del juego, con cuántas preguntas tiene cada uno.
+Route::get('/topics', [TopicController::class, 'index']);
