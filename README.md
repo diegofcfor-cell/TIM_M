@@ -13,12 +13,12 @@ El anfitrión crea una sala y elige el tema (matemáticas, ciencias naturales, c
 
 La idea clave: **la app le habla a Laravel por HTTP** (pide datos, manda respuestas) y **Laravel le avisa a todas las apps por WebSocket** a través de Reverb.
 
-## Estado actual: fase 2 (base de datos y preguntas)
+## Estado actual: fase 3 (crear sala y unirse)
 
-- **Base de datos:** 8 tablas (`users`, `topics`, `questions`, `options`, `rooms`, `room_questions`, `players`, `answers`) con sus modelos y relaciones.
-- **Banco de preguntas:** 6 temas con 20 preguntas cada uno, en `backend/database/data/preguntas.php`. Para agregar preguntas, editá ese archivo y corré `php artisan db:seed`.
-- **API:** `GET /api/topics` devuelve los temas con su cantidad de preguntas.
-- **App:** la pantalla principal muestra los temas en tarjetas de colores. El botón de arriba a la derecha abre la prueba de conexión de la fase 1.
+- **Anfitrión:** inicia sesión (`POST /api/login`), elige tema, tiempo (30 s o 1 min) y cantidad de preguntas, y crea la sala (`POST /api/rooms`). La app muestra el código de 6 caracteres y un QR.
+- **Jugador:** escribe el código o escanea el QR, pone su apodo y entra (`POST /api/rooms/{codigo}/join`). Recibe un token secreto que la app guarda en el celular.
+- **Sala de espera:** muestra quién entró (`GET /api/rooms/{codigo}`). Por ahora hay que tocar **"Actualizar lista"**: es a propósito, para mostrar en el video el problema que resuelve el tiempo real en la fase 4.
+- Fases anteriores: 8 tablas, 120 preguntas en 6 temas (`backend/database/data/preguntas.php`) y la prueba de conexión (ícono de arriba a la derecha).
 
 ## Requisitos
 

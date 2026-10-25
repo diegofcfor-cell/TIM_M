@@ -1,6 +1,9 @@
 <?php
 
 use App\Events\PingEnviado;
+use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\PlayerController;
+use App\Http\Controllers\Api\RoomController;
 use App\Http\Controllers\Api\TopicController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -33,3 +36,13 @@ Route::post('/ping/broadcast', function (Request $request) {
 
 // Fase 2: los temas del juego, con cuántas preguntas tiene cada uno.
 Route::get('/topics', [TopicController::class, 'index']);
+
+// Fase 3: cuenta del anfitrión.
+Route::post('/register', [AuthController::class, 'register']);
+Route::post('/login', [AuthController::class, 'login']);
+Route::post('/logout', [AuthController::class, 'logout'])->middleware('auth:sanctum');
+
+// Fase 3: salas. Crear una sala necesita login; verla o unirse, no.
+Route::post('/rooms', [RoomController::class, 'store'])->middleware('auth:sanctum');
+Route::get('/rooms/{room}', [RoomController::class, 'show']);
+Route::post('/rooms/{room}/join', [PlayerController::class, 'store']);

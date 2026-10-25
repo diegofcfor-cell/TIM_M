@@ -10,6 +10,10 @@ class Player extends Model
 {
     protected $fillable = ['room_id', 'nickname', 'token', 'score'];
 
+    protected $attributes = [
+        'score' => 0,
+    ];
+
     /**
      * El token es secreto: nunca se manda en las respuestas JSON.
      */
