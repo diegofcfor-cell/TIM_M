@@ -20,6 +20,7 @@ void main() {
       return http.Response(
         jsonEncode({'mensaje': '¡Hola desde Laravel 12!', 'hora': 'ahora'}),
         200,
+        headers: {'content-type': 'application/json; charset=utf-8'},
       );
     });
 

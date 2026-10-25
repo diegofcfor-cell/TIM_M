@@ -3,9 +3,9 @@ import 'package:provider/provider.dart';
 
 import '../models/tema.dart';
 import '../state/temas.dart';
-import 'prueba_conexion_screen.dart';
+import 'configurar_sala_screen.dart';
 
-/// Pantalla de la fase 2: muestra los temas que vienen de la base de datos.
+/// El anfitrión elige el tema de la sala. Los temas vienen de la base de datos.
 class TemasScreen extends StatelessWidget {
   const TemasScreen({super.key});
 
@@ -14,18 +14,7 @@ class TemasScreen extends StatelessWidget {
     final temas = context.watch<Temas>();
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Elegí un tema'),
-        actions: [
-          IconButton(
-            tooltip: 'Prueba de conexión',
-            icon: const Icon(Icons.wifi_tethering),
-            onPressed: () => Navigator.of(context).push(
-              MaterialPageRoute(builder: (_) => const PruebaConexionScreen()),
-            ),
-          ),
-        ],
-      ),
+      appBar: AppBar(title: const Text('Elegí un tema')),
       body: RefreshIndicator(
         onRefresh: temas.cargar,
         child: _Contenido(temas: temas),
@@ -81,12 +70,8 @@ class _TarjetaTema extends StatelessWidget {
       borderRadius: BorderRadius.circular(16),
       child: InkWell(
         borderRadius: BorderRadius.circular(16),
-        onTap: () => ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              'Elegiste ${tema.nombre}. Crear la sala llega en la fase 3.',
-            ),
-          ),
+        onTap: () => Navigator.of(context).push(
+          MaterialPageRoute(builder: (_) => ConfigurarSalaScreen(tema: tema)),
         ),
         child: Padding(
           padding: const EdgeInsets.all(12),
