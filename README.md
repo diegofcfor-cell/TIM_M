@@ -13,13 +13,15 @@ El anfitrión crea una sala y elige el tema (matemáticas, ciencias naturales, c
 
 La idea clave: **la app le habla a Laravel por HTTP** (pide datos, manda respuestas) y **Laravel le avisa a todas las apps por WebSocket** a través de Reverb.
 
-## Estado actual: fase 6 (puntos, ranking y podio)
+## Estado actual: fase 7 (la app pulida para celular y tablet)
 
-- **Cómo se ganan puntos:** acertar da **500 puntos**, más un **premio por rapidez de hasta 500**. Si respondés apenas aparece la pregunta te llevás casi 1000; si respondés en el último segundo, unos 500. Equivocarse da 0.
-- **Laravel calcula los puntos** con su propio reloj, así nadie puede hacer trampa desde el celular.
-- **Después de cada pregunta** (evento `PreguntaCerrada`) llega el ranking: el jugador ve "¡Correcto! +850 puntos" y en qué puesto va, y el anfitrión ve los 5 primeros.
-- **Al final** (evento `PartidaTerminada`) todos ven el **podio** con el 1°, 2° y 3°, y el resto de la lista. Si dos empatan, comparten el puesto.
-- Fases anteriores: el juego con preguntas y reloj, la sala de espera en vivo, login del anfitrión, crear sala con código y QR, unirse con apodo, 120 preguntas en 6 temas y la prueba de conexión.
+- **Ícono propio** (un globo de diálogo con un signo de pregunta y los 4 colores del juego) y **pantalla de arranque violeta**.
+- **Tema visual** en un solo archivo (`app/lib/tema_app.dart`): el violeta de la app, botones grandes y redondeados.
+- **Vibración:** al tocar una opción, al acertar, al errar y en los últimos 5 segundos.
+- **Sonidos cortos:** tic-tac en los últimos 5 segundos, correcto, incorrecto y fin de partida. Se silencian con el ícono del parlante, arriba a la derecha durante el juego.
+- **La pantalla no se apaga** mientras estás en una sala.
+- **Se adapta a cada pantalla:** celular parado, celular acostado (dos columnas) y tablet. Hay tests que revisan que nada quede cortado en cada tamaño.
+- Fases anteriores: puntos, ranking y podio; el juego con preguntas y reloj; sala de espera en vivo; login del anfitrión; crear sala con código y QR; unirse con apodo; 120 preguntas en 6 temas y la prueba de conexión.
 
 Para jugar tienen que estar corriendo **las tres terminales**: `php artisan serve`, `php artisan reverb:start` y `php artisan queue:work`.
 

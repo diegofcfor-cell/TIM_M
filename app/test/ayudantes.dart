@@ -8,8 +8,10 @@ import 'package:laravel_reverb/laravel_reverb.dart';
 import 'package:provider/provider.dart';
 import 'package:trivia_live/services/almacenamiento.dart';
 import 'package:trivia_live/services/api_service.dart';
+import 'package:trivia_live/services/efectos.dart';
 import 'package:trivia_live/services/realtime_service.dart';
 import 'package:trivia_live/state/sala_actual.dart';
+import 'package:trivia_live/tema_app.dart';
 
 /// Ayudantes que comparten los tests de salas y de juego.
 
@@ -59,12 +61,41 @@ class ReverbFalso extends RealtimeService {
   }
 }
 
-Widget app(MockClient laravel, Widget pantalla, {RealtimeService? realtime}) =>
-    ChangeNotifierProvider(
-      create: (_) => SalaActual(
-        api: ApiService(client: laravel),
-        almacenamiento: Almacenamiento(),
-        realtime: realtime ?? ReverbFalso(),
-      ),
-      child: MaterialApp(home: pantalla),
-    );
+/// Efectos que no vibran ni suenan: solo anotan qué se pidió.
+class EfectosAnotados extends Efectos {
+  final pedidos = <String>[];
+
+  @override
+  void toque() => pedidos.add('toque');
+
+  @override
+  void tic() => pedidos.add('tic');
+
+  @override
+  void acerto() => pedidos.add('acerto');
+
+  @override
+  void fallo() => pedidos.add('fallo');
+
+  @override
+  void fin() => pedidos.add('fin');
+
+  @override
+  void pantallaPrendida(bool prendida) =>
+      pedidos.add(prendida ? 'pantalla prendida' : 'pantalla libre');
+}
+
+Widget app(
+  MockClient laravel,
+  Widget pantalla, {
+  RealtimeService? realtime,
+  Efectos? efectos,
+}) => ChangeNotifierProvider(
+  create: (_) => SalaActual(
+    api: ApiService(client: laravel),
+    almacenamiento: Almacenamiento(),
+    realtime: realtime ?? ReverbFalso(),
+    efectos: efectos,
+  ),
+  child: MaterialApp(theme: temaApp(), home: pantalla),
+);

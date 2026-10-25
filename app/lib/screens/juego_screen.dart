@@ -34,8 +34,28 @@ class JuegoScreen extends StatelessWidget {
         title: Text('${sala.tema.nombre} · ${sala.codigo}'),
         backgroundColor: sala.tema.color,
         foregroundColor: Colors.white,
+        actions: [_BotonSilencio(salaActual: salaActual)],
       ),
       body: SafeArea(child: cuerpo),
+    );
+  }
+}
+
+class _BotonSilencio extends StatelessWidget {
+  const _BotonSilencio({required this.salaActual});
+
+  final SalaActual salaActual;
+
+  @override
+  Widget build(BuildContext context) {
+    final efectos = salaActual.efectos;
+    return ValueListenableBuilder(
+      valueListenable: efectos.silencio,
+      builder: (context, silencio, _) => IconButton(
+        tooltip: silencio ? 'Activar sonidos' : 'Silenciar',
+        icon: Icon(silencio ? Icons.volume_off : Icons.volume_up),
+        onPressed: efectos.cambiarSilencio,
+      ),
     );
   }
 }
@@ -50,65 +70,100 @@ class _Pregunta extends StatelessWidget {
     final pregunta = salaActual.pregunta!;
     final resultado = salaActual.resultado;
     final cerrada = salaActual.fase == FaseJuego.resultado;
-    final esTablet = MediaQuery.sizeOf(context).width > 600;
+    final pantalla = MediaQuery.sizeOf(context);
+    // Una tablet tiene su lado más corto de 600 o más, esté parada o acostada.
+    final esTablet = pantalla.shortestSide >= 600;
+    // Celular acostado: poca altura, así que ponemos todo en dos columnas.
+    final celularAcostado = !esTablet && pantalla.width > pantalla.height;
     final textos = Theme.of(context).textTheme;
+
+    final encabezado = [
+      Row(
+        children: [
+          Expanded(
+            child: Text(
+              'Pregunta ${pregunta.posicion} de ${pregunta.total}',
+              style: textos.titleMedium,
+            ),
+          ),
+          _Reloj(segundos: salaActual.segundosRestantes),
+        ],
+      ),
+      const SizedBox(height: 8),
+      LinearProgressIndicator(
+        value: pregunta.segundos == 0
+            ? 0
+            : salaActual.segundosRestantes / pregunta.segundos,
+        minHeight: 8,
+        borderRadius: BorderRadius.circular(4),
+      ),
+      const SizedBox(height: 16),
+      Text(
+        pregunta.texto,
+        style: esTablet ? textos.headlineMedium : textos.titleLarge,
+        textAlign: TextAlign.center,
+      ),
+    ];
+
+    final opciones = GridView.count(
+      crossAxisCount: 2,
+      mainAxisSpacing: 12,
+      crossAxisSpacing: 12,
+      childAspectRatio: esTablet || celularAcostado ? 2.4 : 1.3,
+      children: [
+        for (final (i, opcion) in pregunta.opciones.indexed)
+          _BotonOpcion(
+            indice: i,
+            opcion: opcion,
+            elegida: salaActual.miRespuestaId == opcion.id,
+            resultado: resultado,
+            onTap:
+                salaActual.soyAnfitrion ||
+                    cerrada ||
+                    salaActual.miRespuestaId != null
+                ? null
+                : () => salaActual.responder(opcion.id),
+          ),
+      ],
+    );
+    final pie = _PiePregunta(salaActual: salaActual);
+
+    if (celularAcostado) {
+      return Padding(
+        padding: const EdgeInsets.all(12),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(
+              child: ListView(
+                children: [...encabezado, const SizedBox(height: 12), pie],
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(child: opciones),
+          ],
+        ),
+      );
+    }
 
     return Padding(
       padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Row(
-            children: [
-              Expanded(
-                child: Text(
-                  'Pregunta ${pregunta.posicion} de ${pregunta.total}',
-                  style: textos.titleMedium,
-                ),
-              ),
-              _Reloj(segundos: salaActual.segundosRestantes),
-            ],
-          ),
-          const SizedBox(height: 8),
-          LinearProgressIndicator(
-            value: pregunta.segundos == 0
-                ? 0
-                : salaActual.segundosRestantes / pregunta.segundos,
-            minHeight: 8,
-          ),
-          const SizedBox(height: 16),
-          Text(
-            pregunta.texto,
-            style: esTablet ? textos.headlineMedium : textos.titleLarge,
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: 16),
-          Expanded(
-            child: GridView.count(
-              crossAxisCount: 2,
-              mainAxisSpacing: 12,
-              crossAxisSpacing: 12,
-              childAspectRatio: esTablet ? 2.4 : 1.3,
-              children: [
-                for (final (i, opcion) in pregunta.opciones.indexed)
-                  _BotonOpcion(
-                    indice: i,
-                    opcion: opcion,
-                    elegida: salaActual.miRespuestaId == opcion.id,
-                    resultado: resultado,
-                    onTap:
-                        salaActual.soyAnfitrion ||
-                            cerrada ||
-                            salaActual.miRespuestaId != null
-                        ? null
-                        : () => salaActual.responder(opcion.id),
-                  ),
-              ],
+      child: LayoutBuilder(
+        builder: (context, espacio) => Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            ...encabezado,
+            const SizedBox(height: 16),
+            Expanded(child: opciones),
+            const SizedBox(height: 12),
+            // El resultado puede ser largo (ranking + botón): si no entra,
+            // se puede deslizar, pero nunca tapa las opciones.
+            ConstrainedBox(
+              constraints: BoxConstraints(maxHeight: espacio.maxHeight * 0.45),
+              child: SingleChildScrollView(child: pie),
             ),
-          ),
-          const SizedBox(height: 12),
-          _PiePregunta(salaActual: salaActual),
-        ],
+          ],
+        ),
       ),
     );
   }
