@@ -51,6 +51,20 @@ class Sala {
   final String anfitrion;
   final List<Jugador> jugadores;
 
+  /// Una copia de la sala con un jugador más (si no estaba ya en la lista).
+  Sala conJugador(Jugador nuevo) {
+    if (jugadores.any((j) => j.id == nuevo.id)) return this;
+    return Sala(
+      codigo: codigo,
+      estado: estado,
+      segundosPorPregunta: segundosPorPregunta,
+      totalPreguntas: totalPreguntas,
+      tema: tema,
+      anfitrion: anfitrion,
+      jugadores: [...jugadores, nuevo],
+    );
+  }
+
   /// Los códigos tienen 6 letras o números, sin O, 0, I ni 1.
   static final formatoCodigo = RegExp(r'^[A-HJ-NP-Z2-9]{6}$');
 }

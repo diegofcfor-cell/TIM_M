@@ -13,6 +13,8 @@ import 'state/temas.dart';
 void main() {
   final api = ApiService();
   final almacenamiento = Almacenamiento();
+  // Una sola conexión con Reverb para toda la app.
+  final realtime = RealtimeService();
 
   runApp(
     MultiProvider(
@@ -24,11 +26,15 @@ void main() {
         ),
         ChangeNotifierProvider(create: (_) => Temas(api: api)..cargar()),
         ChangeNotifierProvider(
-          create: (_) => SalaActual(api: api, almacenamiento: almacenamiento),
+          create: (_) => SalaActual(
+            api: api,
+            almacenamiento: almacenamiento,
+            realtime: realtime,
+          ),
         ),
         ChangeNotifierProvider(
           create: (_) =>
-              PruebaConexion(api: api, realtime: RealtimeService())..iniciar(),
+              PruebaConexion(api: api, realtime: realtime)..iniciar(),
         ),
       ],
       child: const TriviaLiveApp(),

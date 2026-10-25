@@ -3,10 +3,12 @@
 namespace Tests\Feature;
 
 use App\Enums\RoomStatus;
+use App\Events\JugadorSeUnio;
 use App\Models\Room;
 use App\Models\Topic;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Event;
 use Tests\TestCase;
 
 class JoinRoomTest extends TestCase
@@ -70,5 +72,39 @@ class JoinRoomTest extends TestCase
         $this->postJson('/api/rooms/KX7P2A/join', ['nickname' => 'Diego'])
             ->assertStatus(409)
             ->assertJsonPath('message', 'La partida ya empezó. Esperá a la próxima.');
+    }
+
+    public function test_al_entrar_se_avisa_por_websocket_en_el_canal_de_la_sala(): void
+    {
+        Event::fake([JugadorSeUnio::class]);
+
+        $this->postJson('/api/rooms/KX7P2A/join', ['nickname' => 'Diego'])->assertCreated();
+
+        Event::assertDispatched(JugadorSeUnio::class, function (JugadorSeUnio $evento) {
+            $datos = $evento->broadcastWith();
+
+            return $evento->broadcastOn()->name === 'sala.KX7P2A'
+                && $datos['player']['nickname'] === 'Diego'
+                && $datos['players_count'] === 1
+                && ! array_key_exists('token', $datos['player']);
+        });
+    }
+
+    public function test_si_reverb_no_anda_el_jugador_entra_igual(): void
+    {
+        // Apuntamos a un puerto donde no hay ningún servidor de WebSockets.
+        config([
+            'broadcasting.default' => 'reverb',
+            'broadcasting.connections.reverb.key' => 'clave',
+            'broadcasting.connections.reverb.secret' => 'secreto',
+            'broadcasting.connections.reverb.app_id' => 'app',
+            'broadcasting.connections.reverb.options.host' => '127.0.0.1',
+            'broadcasting.connections.reverb.options.port' => 1,
+            'broadcasting.connections.reverb.options.scheme' => 'http',
+        ]);
+
+        $this->postJson('/api/rooms/KX7P2A/join', ['nickname' => 'Diego'])->assertCreated();
+
+        $this->assertDatabaseHas('players', ['nickname' => 'Diego']);
     }
 }
