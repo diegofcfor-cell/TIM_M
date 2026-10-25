@@ -8,7 +8,7 @@ use Illuminate\Contracts\Broadcasting\ShouldBroadcastNow;
 
 /**
  * Se terminó el tiempo (o respondieron todos): ahora sí se revela
- * la opción correcta.
+ * la opción correcta y el ranking con los puntos de cada uno.
  */
 class PreguntaCerrada implements ShouldBroadcastNow
 {
@@ -30,6 +30,7 @@ class PreguntaCerrada implements ShouldBroadcastNow
             'correct' => $this->roomQuestion->answers()->where('is_correct', true)->count(),
             'players' => $room->players()->count(),
             'is_last' => $this->roomQuestion->position >= $room->total_questions,
+            'ranking' => $room->ranking($this->roomQuestion),
         ];
     }
 }

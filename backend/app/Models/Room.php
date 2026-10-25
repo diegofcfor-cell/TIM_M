@@ -73,6 +73,41 @@ class Room extends Model
         return $this->roomQuestions()->where('position', $this->current_index)->first();
     }
 
+    /**
+     * Los jugadores ordenados por puntos, de mayor a menor. Si hay empate,
+     * comparten el puesto (1, 1, 3...).
+     *
+     * Con $roomQuestion, también dice cuántos puntos sacó cada uno en esa
+     * pregunta, para mostrar el "+850" en la app.
+     *
+     * @return list<array{position: int, id: int, nickname: string, score: int, points?: int}>
+     */
+    public function ranking(?RoomQuestion $roomQuestion = null): array
+    {
+        $pointsThisQuestion = $roomQuestion
+            ? $roomQuestion->answers()->pluck('points', 'player_id')
+            : collect();
+
+        $players = $this->players()->orderByDesc('score')->orderBy('nickname')->get();
+
+        $ranking = [];
+        foreach ($players as $i => $player) {
+            $previous = $ranking[$i - 1] ?? null;
+            $row = [
+                'position' => $previous && $previous['score'] === $player->score ? $previous['position'] : $i + 1,
+                'id' => $player->id,
+                'nickname' => $player->nickname,
+                'score' => $player->score,
+            ];
+            if ($roomQuestion) {
+                $row['points'] = (int) $pointsThisQuestion->get($player->id, 0);
+            }
+            $ranking[] = $row;
+        }
+
+        return $ranking;
+    }
+
     public function host(): BelongsTo
     {
         return $this->belongsTo(User::class, 'host_id');

@@ -40,6 +40,17 @@ class SalaActual extends ChangeNotifier {
   int respondieron = 0;
   int jugadoresEnPartida = 0;
 
+  /// Quién va ganando. Llega al cerrar cada pregunta y al final.
+  List<PuestoRanking> ranking = const [];
+
+  /// Mi fila del ranking (null si soy el anfitrión o todavía no hay).
+  PuestoRanking? get miPuesto {
+    for (final puesto in ranking) {
+      if (puesto.jugadorId == miJugadorId) return puesto;
+    }
+    return null;
+  }
+
   /// La cuenta regresiva que se ve en pantalla. Solo es visual: el que
   /// decide si llegaste a tiempo es el reloj de Laravel.
   int segundosRestantes = 0;
@@ -153,6 +164,7 @@ class SalaActual extends ChangeNotifier {
     respondieron = 0;
     jugadoresEnPartida = 0;
     segundosRestantes = 0;
+    ranking = const [];
     error = null;
   }
 
@@ -180,6 +192,7 @@ class SalaActual extends ChangeNotifier {
     resultado = nuevo;
     respondieron = nuevo.respondieron;
     jugadoresEnPartida = nuevo.jugadores;
+    ranking = nuevo.ranking;
     segundosRestantes = 0;
     notifyListeners();
   }
@@ -211,9 +224,10 @@ class SalaActual extends ChangeNotifier {
         alCerrarPregunta: (nuevo) {
           if (esEstaSala()) _cerrarPregunta(nuevo);
         },
-        alTerminarPartida: () {
+        alTerminarPartida: (rankingFinal) {
           if (!esEstaSala()) return;
           _reloj?.cancel();
+          ranking = rankingFinal;
           fase = FaseJuego.terminada;
           notifyListeners();
         },

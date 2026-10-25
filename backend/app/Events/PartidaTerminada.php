@@ -7,7 +7,7 @@ use Illuminate\Broadcasting\Channel;
 use Illuminate\Contracts\Broadcasting\ShouldBroadcastNow;
 
 /**
- * Se terminaron las preguntas. En la fase 6 este evento suma el podio.
+ * Se terminaron las preguntas: manda el ranking final para armar el podio.
  */
 class PartidaTerminada implements ShouldBroadcastNow
 {
@@ -22,6 +22,7 @@ class PartidaTerminada implements ShouldBroadcastNow
     {
         return [
             'total_questions' => $this->room->total_questions,
+            'ranking' => $this->room->ranking(),
         ];
     }
 }
