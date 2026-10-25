@@ -4,6 +4,7 @@ import 'package:qr_flutter/qr_flutter.dart';
 
 import '../models/sala.dart';
 import '../state/sala_actual.dart';
+import 'juego_screen.dart';
 
 /// Sala de espera. El anfitrión ve el código y el QR; todos ven quién entró.
 ///
@@ -15,6 +16,9 @@ class SalaEsperaScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final salaActual = context.watch<SalaActual>();
+    // Cuando llega la primera pregunta por Reverb, todos pasan al juego.
+    if (salaActual.fase != FaseJuego.espera) return const JuegoScreen();
+
     final sala = salaActual.sala!;
     final esTablet = MediaQuery.sizeOf(context).width > 600;
 
@@ -38,6 +42,49 @@ class SalaEsperaScreen extends StatelessWidget {
               ],
             )
           : ListView(children: [datosSala, lista]),
+      bottomNavigationBar: salaActual.soyAnfitrion
+          ? _BotonEmpezar(salaActual: salaActual)
+          : null,
+    );
+  }
+}
+
+class _BotonEmpezar extends StatelessWidget {
+  const _BotonEmpezar({required this.salaActual});
+
+  final SalaActual salaActual;
+
+  @override
+  Widget build(BuildContext context) {
+    final hayJugadores = salaActual.sala!.jugadores.isNotEmpty;
+
+    return SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            if (salaActual.error != null)
+              Text(
+                salaActual.error!,
+                textAlign: TextAlign.center,
+                style: TextStyle(color: Theme.of(context).colorScheme.error),
+              ),
+            FilledButton.icon(
+              icon: const Icon(Icons.play_arrow),
+              label: Text(
+                hayJugadores
+                    ? '¡Empezar partida!'
+                    : 'Esperando jugadores para empezar',
+              ),
+              onPressed: hayJugadores && !salaActual.enviando
+                  ? salaActual.empezar
+                  : null,
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

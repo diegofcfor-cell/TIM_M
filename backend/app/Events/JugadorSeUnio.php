@@ -6,7 +6,6 @@ use App\Http\Resources\PlayerResource;
 use App\Models\Player;
 use Illuminate\Broadcasting\Channel;
 use Illuminate\Contracts\Broadcasting\ShouldBroadcastNow;
-use Illuminate\Foundation\Events\Dispatchable;
 
 /**
  * Se emite cuando un jugador entra a una sala.
@@ -16,8 +15,6 @@ use Illuminate\Foundation\Events\Dispatchable;
  */
 class JugadorSeUnio implements ShouldBroadcastNow
 {
-    use Dispatchable;
-
     public function __construct(public Player $player) {}
 
     public function broadcastOn(): Channel

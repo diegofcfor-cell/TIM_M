@@ -81,6 +81,22 @@ class ApiService {
     );
   }
 
+  /// Solo el anfitrión: arranca la partida con la primera pregunta.
+  Future<void> empezarPartida(String codigo) =>
+      _post('/rooms/$codigo/start', {});
+
+  /// Solo el anfitrión: pasa a la siguiente pregunta o termina la partida.
+  Future<void> siguientePregunta(String codigo) =>
+      _post('/rooms/$codigo/next', {});
+
+  /// El jugador manda su respuesta. Se identifica con su token secreto.
+  Future<void> responder(String codigo, String tokenJugador, int opcionId) =>
+      _post(
+        '/rooms/$codigo/answer',
+        {'option_id': opcionId},
+        encabezados: {'X-Player-Token': tokenJugador},
+      );
+
   Future<Map<String, dynamic>> _get(String ruta) async {
     final respuesta = await _client.get(_url(ruta), headers: _encabezados());
     return _leer(respuesta);
@@ -88,11 +104,12 @@ class ApiService {
 
   Future<Map<String, dynamic>> _post(
     String ruta,
-    Map<String, dynamic> cuerpo,
-  ) async {
+    Map<String, dynamic> cuerpo, {
+    Map<String, String> encabezados = const {},
+  }) async {
     final respuesta = await _client.post(
       _url(ruta),
-      headers: _encabezados(),
+      headers: {..._encabezados(), ...encabezados},
       body: jsonEncode(cuerpo),
     );
     return _leer(respuesta);

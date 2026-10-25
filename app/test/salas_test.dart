@@ -1,82 +1,16 @@
 import 'dart:convert';
 
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
-import 'package:laravel_reverb/laravel_reverb.dart';
-import 'package:provider/provider.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:trivia_live/models/sala.dart';
 import 'package:trivia_live/models/tema.dart';
 import 'package:trivia_live/screens/configurar_sala_screen.dart';
 import 'package:trivia_live/screens/unirse_screen.dart';
-import 'package:trivia_live/services/almacenamiento.dart';
-import 'package:trivia_live/services/api_service.dart';
-import 'package:trivia_live/services/realtime_service.dart';
-import 'package:trivia_live/state/sala_actual.dart';
 
-Map<String, dynamic> salaJson({
-  List<Map<String, dynamic>> jugadores = const [],
-}) => {
-  'code': 'KX7P2A',
-  'status': 'waiting',
-  'seconds_per_question': 30,
-  'total_questions': 10,
-  'topic': {
-    'id': 1,
-    'name': 'Música',
-    'slug': 'musica',
-    'icon': 'music_note',
-    'color': '#8E24AA',
-  },
-  'host': 'Profe',
-  'players': jugadores,
-};
-
-http.Response json(Object cuerpo, int estado) => http.Response(
-  jsonEncode(cuerpo),
-  estado,
-  headers: {'content-type': 'application/json; charset=utf-8'},
-);
-
-/// Un Reverb "de mentira": no abre ningún WebSocket y nos deja simular
-/// que llega el evento JugadorSeUnio.
-class ReverbFalso extends RealtimeService {
-  final _estados = StreamController<ReverbState>.broadcast();
-  final canales = <String, void Function(Jugador)>{};
-
-  @override
-  Stream<ReverbState> get estados => _estados.stream;
-
-  @override
-  ReverbState get estado => ReverbState.connected;
-
-  @override
-  Future<void> conectar() async {}
-
-  @override
-  Cancelar escucharSala(
-    String codigo, {
-    required void Function(Jugador jugador) alUnirseJugador,
-  }) {
-    canales['sala.$codigo'] = alUnirseJugador;
-    return () => canales.remove('sala.$codigo');
-  }
-}
-
-Widget app(MockClient laravel, Widget pantalla, {RealtimeService? realtime}) =>
-    ChangeNotifierProvider(
-      create: (_) => SalaActual(
-        api: ApiService(client: laravel),
-        almacenamiento: Almacenamiento(),
-        realtime: realtime ?? ReverbFalso(),
-      ),
-      child: MaterialApp(home: pantalla),
-    );
+import 'ayudantes.dart';
 
 void main() {
   setUp(() => SharedPreferences.setMockInitialValues({}));
@@ -200,7 +134,7 @@ void main() {
     expect(reverb.canales.keys, ['sala.KX7P2A']);
 
     // Simulamos el evento JugadorSeUnio que manda Laravel por Reverb.
-    reverb.canales['sala.KX7P2A']!(
+    reverb.canales['sala.KX7P2A']!.alUnirseJugador!(
       const Jugador(id: 9, apodo: 'Lucía', puntos: 0),
     );
     await tester.pump();
