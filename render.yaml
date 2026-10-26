@@ -1,0 +1,48 @@
+# Receta para publicar TriviaLive en Render (https://render.com).
+# Render lee este archivo y arma el servidor solo ("Blueprint").
+services:
+  - type: web
+    name: trivia-live
+    runtime: docker
+    # Virginia (EE. UU.) es la región de Render más cercana a Argentina.
+    region: virginia
+    # Gratis: se duerme a los 15 minutos sin uso y tarda ~1 minuto en
+    # despertar. Para el día de la grabación conviene pasarlo a 0.5c-512mb
+    # (USD 7 por mes, se cobra por segundo) y después volverlo a free.
+    plan: free
+    rootDir: backend
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: ./backend
+    healthCheckPath: /api/ping
+    autoDeployTrigger: commit
+    envVars:
+      - key: APP_ENV
+        value: production
+      - key: APP_DEBUG
+        value: "false"
+      - key: LOG_CHANNEL
+        value: stderr
+      - key: DB_CONNECTION
+        value: sqlite
+      - key: BROADCAST_CONNECTION
+        value: reverb
+      - key: QUEUE_CONNECTION
+        value: database
+      # La app Flutter usa esta misma clave (app/lib/config.dart).
+      - key: REVERB_APP_ID
+        value: trivia-live
+      - key: REVERB_APP_KEY
+        value: trivia-live-key
+      - key: REVERB_APP_SECRET
+        generateValue: true
+      # Laravel le avisa a Reverb adentro del mismo contenedor.
+      - key: REVERB_HOST
+        value: 127.0.0.1
+      - key: REVERB_PORT
+        value: "8080"
+      - key: REVERB_SCHEME
+        value: http
+      # Render te la pide al crear el servicio: la contraseña del
+      # anfitrión (anfitrion@trivia.test) en internet.
+      - key: ANFITRION_PASSWORD
+        sync: false

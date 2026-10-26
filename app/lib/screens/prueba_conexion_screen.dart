@@ -30,7 +30,7 @@ class _PruebaConexionScreenState extends State<PruebaConexionScreen> {
     final texto = _servidor.text.trim();
     if (!Config.hostValido(texto)) {
       setState(
-        () => _errorServidor = 'Escribí solo la IP, por ejemplo 192.168.1.20',
+        () => _errorServidor = 'Escribí solo la IP o la dirección, sin http://',
       );
       return;
     }
@@ -70,7 +70,7 @@ class _PruebaConexionScreenState extends State<PruebaConexionScreen> {
                     controller: _servidor,
                     keyboardType: TextInputType.url,
                     decoration: InputDecoration(
-                      labelText: 'IP de la compu con Laravel',
+                      labelText: 'IP de la compu o dirección en internet',
                       helperText: 'Ahora: ${Config.host}',
                       errorText: _errorServidor,
                     ),

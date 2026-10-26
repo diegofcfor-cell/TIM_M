@@ -58,13 +58,16 @@ void main() {
         child: const MaterialApp(home: PruebaConexionScreen()),
       ),
     );
-    final campo = find.widgetWithText(TextField, 'IP de la compu con Laravel');
+    final campo = find.widgetWithText(
+      TextField,
+      'IP de la compu o dirección en internet',
+    );
 
     await tester.enterText(campo, 'http://192.168.1.20:8000');
     await tester.tap(find.text('Guardar servidor'));
     await tester.pump();
     expect(
-      find.text('Escribí solo la IP, por ejemplo 192.168.1.20'),
+      find.text('Escribí solo la IP o la dirección, sin http://'),
       findsOneWidget,
     );
 
@@ -76,6 +79,20 @@ void main() {
     // La próxima vez que arranque, la app usa esa IP.
     await Config.cargar();
     expect(Config.host, '192.168.1.20');
+    Config.host = Config.hostPorDefecto;
+  });
+
+  test('una IP usa http y un nombre de internet usa https', () {
+    Config.host = '192.168.1.20';
+    expect(Config.seguro, isFalse);
+    expect(Config.apiBaseUrl, 'http://192.168.1.20:8000/api');
+    expect(Config.puertoReverb, 8080);
+
+    Config.host = 'trivia-live.onrender.com';
+    expect(Config.seguro, isTrue);
+    expect(Config.apiBaseUrl, 'https://trivia-live.onrender.com/api');
+    expect(Config.puertoReverb, 443);
+
     Config.host = Config.hostPorDefecto;
   });
 }

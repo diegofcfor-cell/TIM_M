@@ -36,9 +36,9 @@ class RealtimeService {
           reverb ??
           Reverb(
             host: Config.host,
-            port: Config.reverbPort,
+            port: Config.puertoReverb,
             appKey: Config.reverbAppKey,
-            useTls: false,
+            useTls: Config.seguro,
           );
 
   final Reverb reverb;

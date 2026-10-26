@@ -97,7 +97,22 @@ Para saber la IP de tu computadora: `ipconfig` en Windows o `ip addr` en Linux.
 
 Si tenés un celular conectado por cable, también podés instalarla directo con `flutter install`.
 
-### 4. Tests
+### 4. Publicarlo en internet (Render)
+
+El juego entra en un solo servicio de [Render](https://render.com): un contenedor de Docker donde corren juntos Laravel, Reverb y la cola, detrás de nginx (que recibe todo por un solo puerto). La receta está en `render.yaml` y en `backend/Dockerfile`.
+
+1. En Render: **New → Blueprint**, elegí este repositorio y aceptá. Te va a pedir `ANFITRION_PASSWORD`: inventá la contraseña del anfitrión.
+2. Esperá a que termine el primer deploy (unos minutos). Te queda una dirección como `trivia-live.onrender.com`.
+3. En cada celular: ícono de arriba a la derecha → **Servidor** → escribí `trivia-live.onrender.com` (sin `https://`) → Guardar → volvé a abrir la app. Con un nombre de internet la app usa sola `https://` y `wss://`.
+4. Entrá como anfitrión con `anfitrion@trivia.test` y la contraseña que elegiste.
+
+Cosas a saber del plan gratis:
+
+- Se **duerme a los 15 minutos** sin uso y tarda cerca de un minuto en despertar. Abrí la prueba de conexión un rato antes de jugar.
+- La base de datos es SQLite **dentro del contenedor**: cuando se duerme o se reinicia, se borran las salas (las preguntas y el anfitrión se cargan de nuevo solos).
+- Para el día de la grabación podés pasarlo al plan de USD 7 por mes (no se duerme; se cobra por segundo) y después volverlo a gratis.
+
+### 5. Tests
 
 ```bash
 cd backend && php artisan test

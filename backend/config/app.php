@@ -16,6 +16,12 @@ return [
     'name' => env('APP_NAME', 'Laravel'),
 
     /*
+    | Contraseña del anfitrión de prueba (anfitrion@trivia.test). En internet
+    | hay que ponerla en la variable ANFITRION_PASSWORD.
+    */
+    'anfitrion_password' => env('ANFITRION_PASSWORD', 'password'),
+
+    /*
     |--------------------------------------------------------------------------
     | Application Environment
     |--------------------------------------------------------------------------
