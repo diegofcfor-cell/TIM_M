@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import 'config.dart';
 import 'screens/inicio_screen.dart';
 import 'services/almacenamiento.dart';
 import 'services/api_service.dart';
@@ -12,8 +13,10 @@ import 'state/sesion.dart';
 import 'state/temas.dart';
 import 'tema_app.dart';
 
-void main() {
+Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  // Primero sabemos a qué servidor conectarnos; después armamos todo.
+  await Config.cargar();
   final api = ApiService();
   final almacenamiento = Almacenamiento();
   // Una sola conexión con Reverb para toda la app.
