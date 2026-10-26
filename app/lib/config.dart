@@ -34,8 +34,8 @@ class Config {
     await prefs.setString(_claveHost, nuevo.trim());
   }
 
-  /// Una IP (192.168.1.20) o un nombre (trivia.ejemplo.com), sin http://
-  /// ni puerto.
+  /// Una IP (192.168.1.20) o un nombre (trivia-live.onrender.com), sin
+  /// http:// ni puerto.
   static bool hostValido(String texto) =>
       RegExp(r'^[a-zA-Z0-9.-]+$').hasMatch(texto.trim());
 
@@ -54,5 +54,16 @@ class Config {
     defaultValue: 'trivia-live-key',
   );
 
-  static String get apiBaseUrl => 'http://$host:$apiPort/api';
+  /// En tu red (una IP como 192.168.1.20) se usa http:// y los puertos
+  /// 8000 y 8080. En internet (un nombre como trivia-live.onrender.com) se
+  /// usa https:// y wss://, todo por el puerto 443: es lo que exige Render.
+  static bool get seguro =>
+      host != 'localhost' && !RegExp(r'^\d{1,3}(\.\d{1,3}){3}$').hasMatch(host);
+
+  static int get puertoApi => seguro ? 443 : apiPort;
+
+  static int get puertoReverb => seguro ? 443 : reverbPort;
+
+  static String get apiBaseUrl =>
+      seguro ? 'https://$host/api' : 'http://$host:$apiPort/api';
 }

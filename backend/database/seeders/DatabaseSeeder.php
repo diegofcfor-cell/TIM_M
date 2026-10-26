@@ -15,10 +15,11 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        // Un anfitrión de prueba para crear salas (contraseña: password).
+        // Un anfitrión para crear salas. En tu compu la contraseña es
+        // "password"; en internet sale de la variable ANFITRION_PASSWORD.
         User::firstOrCreate(
             ['email' => 'anfitrion@trivia.test'],
-            ['name' => 'Anfitrión de prueba', 'password' => 'password'],
+            ['name' => 'Anfitrión de prueba', 'password' => config('app.anfitrion_password')],
         );
 
         $this->call(QuestionBankSeeder::class);
